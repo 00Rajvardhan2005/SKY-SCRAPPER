@@ -544,11 +544,10 @@ function RouteMap() {
               <button
                 key={item.value}
                 onClick={() => setFilter(item.value)}
-                className={`rounded-lg px-4 py-2.5 text-sm font-medium transition ${
-                  filter === item.value
+                className={`rounded-lg px-4 py-2.5 text-sm font-medium transition ${filter === item.value
                     ? "bg-[#1565C0] text-white"
                     : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                }`}
+                  }`}
               >
                 {item.label}
               </button>
@@ -867,19 +866,13 @@ function RouteMap() {
                         <animateMotion
                           dur="2.5s"
                           repeatCount="indefinite"
-                          path={`M ${
-                            from.x * 6
-                          } ${
-                            from.y * 6.2
-                          } Q ${
-                            midX * 6
-                          } ${
-                            midY * 6.2
-                          } ${
-                            to.x * 6
-                          } ${
-                            to.y * 6.2
-                          }`}
+                          path={`M ${from.x * 6
+                            } ${from.y * 6.2
+                            } Q ${midX * 6
+                            } ${midY * 6.2
+                            } ${to.x * 6
+                            } ${to.y * 6.2
+                            }`}
                         />
                       </circle>
                     )}
@@ -924,11 +917,10 @@ function RouteMap() {
                 >
 
                   <div
-                    className={`relative flex h-9 w-9 items-center justify-center rounded-full border-2 border-white shadow-lg transition-all duration-200 ${
-                      isActive
+                    className={`relative flex h-9 w-9 items-center justify-center rounded-full border-2 border-white shadow-lg transition-all duration-200 ${isActive
                         ? "scale-125 bg-[#1565C0] text-white"
                         : "bg-white text-[#1565C0] hover:scale-110"
-                    }`}
+                      }`}
                   >
 
                     {isActive && (
@@ -943,11 +935,10 @@ function RouteMap() {
                   </div>
 
                   <div
-                    className={`mt-1 rounded px-1.5 py-0.5 text-[9px] font-bold shadow-sm ${
-                      isActive
+                    className={`mt-1 rounded px-1.5 py-0.5 text-[9px] font-bold shadow-sm ${isActive
                         ? "bg-[#0B1F3A] text-white"
                         : "bg-white/95 text-[#0B1F3A]"
-                    }`}
+                      }`}
                   >
                     {airport.code}
                   </div>
@@ -1155,11 +1146,10 @@ function RouteMap() {
                 </span>
 
                 <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                    selectedRoute.change < 0
+                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${selectedRoute.change < 0
                       ? "bg-green-50 text-green-600"
                       : "bg-red-50 text-red-600"
-                  }`}
+                    }`}
                 >
                   {selectedRoute.status}
                 </span>
@@ -1276,11 +1266,10 @@ function RouteMap() {
                 <tr
                   key={route.id}
                   onClick={() => setSelectedRoute(route)}
-                  className={`cursor-pointer transition hover:bg-gray-50 ${
-                    selectedRoute?.id === route.id
+                  className={`cursor-pointer transition hover:bg-gray-50 ${selectedRoute?.id === route.id
                       ? "bg-blue-50/50"
                       : ""
-                  }`}
+                    }`}
                 >
 
                   <td className="px-6 py-4">
@@ -1288,11 +1277,10 @@ function RouteMap() {
                     <div className="flex items-center gap-3">
 
                       <div
-                        className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-                          route.change < 0
+                        className={`flex h-9 w-9 items-center justify-center rounded-lg ${route.change < 0
                             ? "bg-green-50 text-green-600"
                             : "bg-red-50 text-red-600"
-                        }`}
+                          }`}
                       >
                         <Plane size={16} />
                       </div>
@@ -1361,11 +1349,10 @@ function RouteMap() {
             <button
               key={route.id}
               onClick={() => setSelectedRoute(route)}
-              className={`flex w-full flex-col gap-4 p-5 text-left transition hover:bg-gray-50 ${
-                selectedRoute?.id === route.id
+              className={`flex w-full flex-col gap-4 p-5 text-left transition hover:bg-gray-50 ${selectedRoute?.id === route.id
                   ? "bg-blue-50/50"
                   : ""
-              }`}
+                }`}
             >
 
               <div className="flex items-center justify-between">
@@ -1373,11 +1360,10 @@ function RouteMap() {
                 <div className="flex items-center gap-3">
 
                   <div
-                    className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-                      route.change < 0
+                    className={`flex h-9 w-9 items-center justify-center rounded-lg ${route.change < 0
                         ? "bg-green-50 text-green-600"
                         : "bg-red-50 text-red-600"
-                    }`}
+                      }`}
                   >
                     <Plane size={16} />
                   </div>
@@ -1476,7 +1462,7 @@ function RouteMap() {
       <div className="flex flex-col gap-2 border-t border-gray-200 pt-4 text-xs text-gray-400 sm:flex-row sm:items-center sm:justify-between">
 
         <span>
-          Sky Scrapper · Route Intelligence
+          Sky Metrics · Route Intelligence
         </span>
 
         <span>

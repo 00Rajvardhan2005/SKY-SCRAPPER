@@ -588,11 +588,10 @@ function Alerts() {
                 onClick={() =>
                   setFilter(item.value)
                 }
-                className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                  filter === item.value
+                className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${filter === item.value
                     ? "bg-[#1565C0] text-white"
                     : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 {item.label}
               </button>
@@ -640,11 +639,10 @@ function Alerts() {
 
               <div
                 key={alert.id}
-                className={`p-5 transition hover:bg-gray-50/70 ${
-                  !alert.read
+                className={`p-5 transition hover:bg-gray-50/70 ${!alert.read
                     ? "bg-blue-50/20"
                     : ""
-                }`}
+                  }`}
               >
 
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-center">
@@ -887,7 +885,7 @@ function Alerts() {
       <div className="flex flex-col gap-2 border-t border-gray-200 pt-4 text-xs text-gray-400 sm:flex-row sm:items-center sm:justify-between">
 
         <span>
-          SKY SCRAPPER Alert Engine
+          SKY METRICS Alert Engine
         </span>
 
         <span>

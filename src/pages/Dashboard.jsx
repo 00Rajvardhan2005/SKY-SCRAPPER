@@ -10,7 +10,7 @@ function Dashboard() {
       {/* Page Introduction */}
       <div className="rounded-2xl bg-white p-8 shadow-sm border border-gray-100">
         <h2 className="text-3xl font-bold text-[#0B1F3A]">
-          Sky Scrapper Dashboard
+          Sky Metrics Dashboard
         </h2>
 
         <p className="mt-2 text-gray-500">
