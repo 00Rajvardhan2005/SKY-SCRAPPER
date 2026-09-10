@@ -451,11 +451,10 @@ function Analytics() {
               <button
                 key={range}
                 onClick={() => setTimeRange(range)}
-                className={`rounded-md px-4 py-2 text-xs font-semibold transition ${
-                  timeRange === range
+                className={`rounded-md px-4 py-2 text-xs font-semibold transition ${timeRange === range
                     ? "bg-white text-[#1565C0] shadow-sm"
                     : "text-gray-500 hover:text-gray-700"
-                }`}
+                  }`}
               >
                 {range}
               </button>
@@ -500,7 +499,7 @@ function Analytics() {
                       240 -
                       ((item.fare - chartMin) /
                         (chartMax - chartMin || 1)) *
-                        190;
+                      190;
 
                     return `${x},${y}`;
                   })
@@ -521,7 +520,7 @@ function Analytics() {
                       240 -
                       ((item.fare - chartMin) /
                         (chartMax - chartMin || 1)) *
-                        190;
+                      190;
 
                     return `${x},${y}`;
                   })
@@ -542,7 +541,7 @@ function Analytics() {
                   240 -
                   ((item.fare - chartMin) /
                     (chartMax - chartMin || 1)) *
-                    190;
+                  190;
 
                 return (
                   <g key={item.day}>
@@ -1001,7 +1000,7 @@ function Analytics() {
       <div className="flex flex-col gap-2 border-t border-gray-200 pt-4 text-xs text-gray-400 sm:flex-row sm:items-center sm:justify-between">
 
         <span>
-          SKY SCRAPPER Analytics Engine
+          SKY METRICS Analytics Engine
         </span>
 
         <span>

@@ -1,3 +1,4 @@
+import logo from "../assets/logo.png";
 import {
   LayoutDashboard,
   Plane,
@@ -62,13 +63,17 @@ function Sidebar({ activePage, setActivePage }) {
 
       {/* Logo */}
       <div className="flex items-center gap-3 border-b border-white/10 px-2 pb-7">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#1565C0]">
-          <Plane size={22} />
+        <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-sm">
+          <img
+            src={logo}
+            alt="Sky Metrics Logo"
+            className="h-full w-full object-contain"
+          />
         </div>
 
         <div>
           <h2 className="text-[15px] font-bold tracking-wide">
-            SKY SCRAPPER
+            SKY METRICS
           </h2>
 
           <span className="text-[10px] text-[#9FB0C8]">
@@ -92,11 +97,10 @@ function Sidebar({ activePage, setActivePage }) {
               <button
                 key={item.name}
                 onClick={() => setActivePage(item.page)}
-                className={`group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium transition-all duration-200 ${
-                  isActive
+                className={`group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium transition-all duration-200 ${isActive
                     ? "bg-[#1565C0] text-white shadow-lg shadow-blue-900/20"
                     : "text-[#AEBBD0] hover:bg-white/10 hover:text-white"
-                }`}
+                  }`}
               >
                 <Icon size={19} />
 
