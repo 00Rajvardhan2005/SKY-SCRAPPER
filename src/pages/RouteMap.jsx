@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { geoMercator, geoPath } from "d3-geo";
 import {
   MapPinned,
   Plane,
@@ -15,6 +16,10 @@ import {
   X,
   Radio,
 } from "lucide-react";
+
+// Real India boundary (Natural-Earth-derived, simplified for the web).
+// See the accompanying setup notes for exactly where this file goes.
+import indiaGeoJson from "../data/india.json";
 
 /* =========================================================
    ROUTE DATA
@@ -220,23 +225,27 @@ const routes = [
 
 /* =========================================================
    AIRPORT POSITIONS
-   SVG MAP COORDINATES
+   Real latitude/longitude only — no manually estimated x/y.
+   To add a new airport later, just add a { code, city, lat, lon }
+   entry here. Its on-map pixel position is always derived from
+   the same Mercator projection used for the India boundary and
+   the route lines, so it will automatically line up correctly.
 ========================================================= */
 
 const airports = [
-  { code: "DEL", city: "Delhi", x: 47, y: 23 },
-  { code: "JAI", city: "Jaipur", x: 39, y: 29 },
-  { code: "AMD", city: "Ahmedabad", x: 32, y: 44 },
-  { code: "LKO", city: "Lucknow", x: 57, y: 31 },
-  { code: "CCU", city: "Kolkata", x: 78, y: 43 },
-  { code: "BOM", city: "Mumbai", x: 34, y: 56 },
-  { code: "PNQ", city: "Pune", x: 38, y: 59 },
-  { code: "GOI", city: "Goa", x: 38, y: 70 },
-  { code: "HYD", city: "Hyderabad", x: 51, y: 59 },
-  { code: "BLR", city: "Bengaluru", x: 46, y: 73 },
-  { code: "MAA", city: "Chennai", x: 55, y: 76 },
-  { code: "COK", city: "Kochi", x: 45, y: 84 },
-  { code: "GAU", city: "Guwahati", x: 88, y: 35 },
+  { code: "DEL", city: "Delhi", lat: 28.7041, lon: 77.1025 },
+  { code: "JAI", city: "Jaipur", lat: 26.9124, lon: 75.7873 },
+  { code: "AMD", city: "Ahmedabad", lat: 23.0225, lon: 72.5714 },
+  { code: "LKO", city: "Lucknow", lat: 26.8467, lon: 80.9462 },
+  { code: "CCU", city: "Kolkata", lat: 22.5726, lon: 88.3639 },
+  { code: "BOM", city: "Mumbai", lat: 19.076, lon: 72.8777 },
+  { code: "PNQ", city: "Pune", lat: 18.5204, lon: 73.8567 },
+  { code: "GOI", city: "Goa", lat: 15.4909, lon: 73.8278 },
+  { code: "HYD", city: "Hyderabad", lat: 17.385, lon: 78.4867 },
+  { code: "BLR", city: "Bengaluru", lat: 12.9716, lon: 77.5946 },
+  { code: "MAA", city: "Chennai", lat: 13.0827, lon: 80.2707 },
+  { code: "COK", city: "Kochi", lat: 9.9312, lon: 76.2673 },
+  { code: "GAU", city: "Guwahati", lat: 26.1445, lon: 91.7362 },
 ];
 
 /* =========================================================
@@ -247,6 +256,8 @@ function formatFare(value) {
   return `₹${value.toLocaleString("en-IN")}`;
 }
 
+// Looks up an airport's static metadata (city name, lat/lon) by code.
+// Not for map placement — see the projectedAirports map for that.
 function getAirport(code) {
   return airports.find((airport) => airport.code === code);
 }
@@ -275,15 +286,108 @@ function getChangeClass(change) {
   return "bg-gray-100 text-gray-500";
 }
 
+// Builds a quadratic-bezier path string for a route between two
+// already-projected {x, y} pixel positions (output of the Mercator
+// projection below), with an arc height that scales with distance.
+function getRoutePath(from, to) {
+  const midX = (from.x + to.x) / 2;
+  const midY = (from.y + to.y) / 2;
+
+  const distance = Math.hypot(to.x - from.x, to.y - from.y) || 1;
+  const curveHeight = Math.min(60, distance * 0.18);
+
+  return `M ${from.x} ${from.y} Q ${midX} ${midY - curveHeight} ${to.x} ${to.y}`;
+}
+
 /* =========================================================
    COMPONENT
 ========================================================= */
 
 function RouteMap() {
   const [search, setSearch] = useState("");
-  const [selectedRoute, setSelectedRoute] = useState(routes[0]);
+  const [selectedRoute, setSelectedRoute] = useState(
+    routes.find((route) => route.from === "DEL" && route.to === "BOM") ||
+      routes[0]
+  );
   const [filter, setFilter] = useState("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // ---------------------------------------------------------
+  // Geographic projection setup
+  //
+  //   Real India GeoJSON  ->  geoMercator().fitSize(...)
+  //                       ->  India boundary <path>
+  //                       ->  airport lat/lon projected to px
+  //                       ->  route <path>s between those px points
+  //
+  // The map container is measured with a ResizeObserver so the
+  // projection is recalculated whenever the container resizes,
+  // which is what keeps everything (map, markers, routes) aligned
+  // and responsive without distorting the geography.
+  // ---------------------------------------------------------
+
+  const mapContainerRef = useRef(null);
+  const [mapSize, setMapSize] = useState({ width: 900, height: 620 });
+
+  useEffect(() => {
+    const el = mapContainerRef.current;
+
+    if (!el) return;
+
+    const updateSize = () => {
+      setMapSize({
+        width: el.clientWidth,
+        height: el.clientHeight,
+      });
+    };
+
+    updateSize();
+
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, []);
+
+  const projection = useMemo(
+    () =>
+      geoMercator().fitSize(
+        [mapSize.width, mapSize.height],
+        indiaGeoJson
+      ),
+    [mapSize.width, mapSize.height]
+  );
+
+  const pathGenerator = useMemo(() => geoPath(projection), [projection]);
+
+  const indiaPath = useMemo(
+    () => pathGenerator(indiaGeoJson.features[0]),
+    [pathGenerator]
+  );
+
+  // Map of airport code -> { code, city, lat, lon, x, y }, where x/y
+  // are the projected pixel coordinates for the current map size.
+  const projectedAirports = useMemo(() => {
+    const map = {};
+
+    airports.forEach((airport) => {
+      const point = projection([airport.lon, airport.lat]);
+
+      if (point) {
+        map[airport.code] = {
+          ...airport,
+          x: point[0],
+          y: point[1],
+        };
+      }
+    });
+
+    return map;
+  }, [projection]);
+
+  function getProjectedAirport(code) {
+    return projectedAirports[code];
+  }
 
   const filteredRoutes = useMemo(() => {
     const query = search.toLowerCase().trim();
@@ -604,7 +708,10 @@ function RouteMap() {
           </div>
 
           {/* MAP AREA */}
-          <div className="relative h-[620px] overflow-hidden bg-[#edf4fa]">
+          <div
+            ref={mapContainerRef}
+            className="relative h-[620px] overflow-hidden bg-[#edf4fa]"
+          >
 
             {/* Grid */}
             <div
@@ -628,13 +735,18 @@ function RouteMap() {
             </div>
 
             {/* =================================================
-                INDIA SILHOUETTE
+                GEOGRAPHIC MAP + ROUTES
+                One <svg>, one coordinate system: the India boundary
+                path and every route path are generated from the
+                SAME geoMercator projection, fitted to the current
+                pixel size of this container. Because airport pixel
+                positions come from that identical projection, route
+                lines always terminate exactly on their markers.
             ================================================= */}
 
             <svg
-              viewBox="0 0 600 720"
-              className="absolute left-[13%] top-[2%] h-[94%] w-[74%]"
-              preserveAspectRatio="none"
+              viewBox={`0 0 ${mapSize.width} ${mapSize.height}`}
+              className="absolute inset-0 h-full w-full"
             >
 
               <defs>
@@ -649,129 +761,6 @@ function RouteMap() {
                   <stop offset="0%" stopColor="#dce8f2" />
                   <stop offset="100%" stopColor="#cdddea" />
                 </linearGradient>
-
-              </defs>
-
-              {/* More recognizable India shape */}
-              <path
-                d="
-                  M 118 80
-                  L 165 62
-                  L 205 35
-                  L 250 45
-                  L 290 32
-                  L 335 48
-                  L 365 38
-                  L 398 62
-                  L 425 70
-                  L 454 96
-                  L 482 104
-                  L 493 130
-                  L 525 148
-                  L 513 175
-                  L 532 198
-                  L 520 220
-                  L 535 246
-                  L 520 272
-                  L 505 295
-                  L 512 320
-                  L 492 344
-                  L 482 372
-                  L 465 398
-                  L 450 425
-                  L 432 455
-                  L 417 485
-                  L 405 520
-                  L 390 555
-                  L 374 590
-                  L 356 628
-                  L 338 670
-                  L 316 706
-                  L 295 681
-                  L 278 645
-                  L 260 610
-                  L 240 578
-                  L 216 550
-                  L 195 516
-                  L 175 484
-                  L 156 453
-                  L 138 421
-                  L 124 387
-                  L 105 355
-                  L 91 321
-                  L 76 288
-                  L 83 256
-                  L 65 226
-                  L 80 194
-                  L 68 165
-                  L 91 138
-                  L 88 111
-                  L 112 101
-                  Z
-                "
-                fill="url(#indiaFill)"
-                stroke="#b9cad9"
-                strokeWidth="3"
-              />
-
-              {/* Northern mountain indication */}
-              <path
-                d="
-                  M 105 111
-                  L 155 85
-                  L 205 62
-                  L 250 45
-                  L 290 32
-                  L 335 48
-                  L 365 38
-                  L 398 62
-                  L 425 70
-                  L 454 96
-                "
-                fill="none"
-                stroke="#b2c5d6"
-                strokeWidth="5"
-                strokeLinecap="round"
-                opacity="0.7"
-              />
-
-              {/* Western Ghats indication */}
-              <path
-                d="
-                  M 138 421
-                  C 155 450 165 475 180 505
-                  C 195 535 210 555 225 580
-                "
-                fill="none"
-                stroke="#c0cfdd"
-                strokeWidth="7"
-                strokeLinecap="round"
-                opacity="0.8"
-              />
-
-              {/* Eastern Ghats indication */}
-              <path
-                d="
-                  M 400 350
-                  C 390 390 380 430 375 470
-                  C 365 510 350 545 335 575
-                "
-                fill="none"
-                stroke="#c0cfdd"
-                strokeWidth="6"
-                strokeLinecap="round"
-                opacity="0.8"
-              />
-
-            </svg>
-
-            {/* =================================================
-                ROUTE SVG
-            ================================================= */}
-
-            <svg className="absolute inset-0 h-full w-full overflow-visible">
-
-              <defs>
 
                 <filter
                   id="routeGlow"
@@ -793,27 +782,28 @@ function RouteMap() {
 
               </defs>
 
+              {/* Real India boundary, generated by d3-geo from GeoJSON */}
+              {indiaPath && (
+                <path
+                  d={indiaPath}
+                  fill="url(#indiaFill)"
+                  stroke="#b9cad9"
+                  strokeWidth="1.5"
+                />
+              )}
+
+              {/* Routes */}
               {filteredRoutes.map((route) => {
 
-                const from = getAirport(route.from);
-                const to = getAirport(route.to);
+                const from = getProjectedAirport(route.from);
+                const to = getProjectedAirport(route.to);
 
                 if (!from || !to) return null;
 
                 const isSelected =
                   selectedRoute?.id === route.id;
 
-                const midX =
-                  (from.x + to.x) / 2;
-
-                const midY =
-                  Math.min(from.y, to.y) - 7;
-
-                const path = `
-                  M ${from.x}% ${from.y}%
-                  Q ${midX}% ${midY}%
-                  ${to.x}% ${to.y}%
-                `;
+                const path = getRoutePath(from, to);
 
                 const routeColor =
                   route.change < 0
@@ -866,13 +856,7 @@ function RouteMap() {
                         <animateMotion
                           dur="2.5s"
                           repeatCount="indefinite"
-                          path={`M ${from.x * 6
-                            } ${from.y * 6.2
-                            } Q ${midX * 6
-                            } ${midY * 6.2
-                            } ${to.x * 6
-                            } ${to.y * 6.2
-                            }`}
+                          path={path}
                         />
                       </circle>
                     )}
@@ -885,9 +869,17 @@ function RouteMap() {
 
             {/* =================================================
                 AIRPORT MARKERS
+                Positioned with pixel left/top computed from the
+                same projection as the map and routes above (not
+                percentages), so they land exactly on the real
+                geographic location and stay correct on resize.
             ================================================= */}
 
             {airports.map((airport) => {
+
+              const projected = projectedAirports[airport.code];
+
+              if (!projected) return null;
 
               const isActive =
                 selectedRoute?.from === airport.code ||
@@ -911,8 +903,8 @@ function RouteMap() {
                   }}
                   className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
                   style={{
-                    left: `${airport.x}%`,
-                    top: `${airport.y}%`,
+                    left: `${projected.x}px`,
+                    top: `${projected.y}px`,
                   }}
                 >
 
