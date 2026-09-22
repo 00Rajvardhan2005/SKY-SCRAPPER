@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-// import { geoMercator, geoPath } from "d3-geo";
+import { geoMercator, geoPath } from "d3-geo";
 import {
   MapPinned,
   Plane,
