@@ -10,6 +10,9 @@ import Airlines from "./pages/Airlines";
 import Analytics from "./pages/Analytics";
 import Alerts from "./pages/Alerts";
 import RouteMap from "./pages/RouteMap";
+import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
+import Help from "./pages/Help";
 
 
 function App() {
@@ -34,6 +37,15 @@ function App() {
 
       case "route-map":
         return <RouteMap />;
+
+      case "reports":
+        return <Reports />;
+
+      case "settings":
+        return <Settings />;
+
+      case "help":
+        return <Help />;
 
       case "dashboard":
       default:
